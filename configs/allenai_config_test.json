@@ -1,0 +1,8 @@
+{
+    "model_name": "allenai/longformer-base-4096",
+    "device": "cpu",
+    "batch_size": 1,
+    "lr": 5e-5,
+    "epoch_num": 1,
+    "log_step": 50
+}
