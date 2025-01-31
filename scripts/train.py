@@ -38,7 +38,7 @@ class Trainer:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
         
         # initalize data loaders
-        self.dataloader = create_dataloader(self.resume_path, self.jd_path, self.tokenizer)
+        self.dataloader = create_dataloader(self.resume_path, self.jd_path, self.tokenizer, self.batch_size)
         
         # set scaler
         self.scaler = GradScaler()
@@ -55,6 +55,7 @@ class Trainer:
         labels_masked = labels[mask_positions]
         loss = F.cross_entropy(pred_masked, labels_masked)
         return loss
+    
     
     def train(self):
         self.model.train()
