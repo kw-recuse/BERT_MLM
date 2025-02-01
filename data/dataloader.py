@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset, DataLoader, ConcatDataset
+from torch.utils.data import random_split, Dataset, DataLoader, ConcatDataset
 
 import pandas as pd
 
@@ -53,11 +53,16 @@ class MLMDataset(Dataset):
         }
 
 
-def create_dataloader(resume_path, jd_path, tokenizer, batch_size):
+def create_dataloaders(resume_path, jd_path, tokenizer, batch_size, train_ratio=0.1):
     resume_dataset = MLMDataset(resume_path, tokenizer, 'Resume_str')
     jd_dataset = MLMDataset(jd_path, tokenizer, 'job_description')
     
     combined_dataset = ConcatDataset([resume_dataset, jd_dataset])
+    train_size = int(train_ratio * len(combined_dataset))
+    val_size = len(combined_dataset) - train_size
+    train_dataset, val_dataset = random_split(combined_dataset, [train_size, val_size])
 
-    dataloader = DataLoader(combined_dataset, batch_size=batch_size, shuffle=True)
-    return dataloader
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    
+    return train_dataloader, val_dataloader

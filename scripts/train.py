@@ -5,7 +5,7 @@ import torch
 from torch.cuda.amp import autocast, GradScaler
 from torch.nn import functional as F
 from models.base import load_tokenizer_and_model
-from data.dataloader import create_dataloader
+from data.dataloader import create_dataloaders
 
 class Trainer:
     def __init__(self, config_file, **kwargs):
@@ -38,7 +38,7 @@ class Trainer:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
         
         # initalize data loaders
-        self.dataloader = create_dataloader(self.resume_path, self.jd_path, self.tokenizer, self.batch_size)
+        self.train_dataloader, self.val_dataloader = create_dataloaders(self.resume_path, self.jd_path, self.tokenizer, self.batch_size)
         
         # set scaler
         self.scaler = GradScaler()
@@ -56,11 +56,30 @@ class Trainer:
         loss = F.cross_entropy(pred_masked, labels_masked)
         return loss
     
+    def evaluate_val_loss(self, step):
+        self.model.eval()
+        val_loss = 0.0
+        val_steps = 0
+        with torch.no_grad():
+            for val_batch in self.val_dataloader:
+                val_masked_input_ids = val_batch["masked_input_ids"].to(self.device)
+                val_mask_labels = val_batch["mask_labels"].to(self.device)
+                val_attention_mask = val_batch["attention_mask"].to(self.device)
+                
+                with torch.amp.autocast(device_type='cuda'):
+                    val_outputs = self.model(val_masked_input_ids, attention_mask=val_attention_mask)
+                    val_logits = val_outputs.logits
+                    val_loss += self.mlm_loss(val_logits.view(-1, val_logits.size(-1)), val_mask_labels.view(-1)).item()
+                val_steps += 1
+                
+        avg_val_loss = val_loss / val_steps
+        print(f"Validation Loss at step {step+1}: {round(avg_val_loss, 4)}")
+        self.model.train()
     
     def train(self):
         self.model.train()
         for epoch in range(self.epoch_num):
-            progress_bar = tqdm(enumerate(self.dataloader), total=len(self.dataloader), desc=f"Epoch {epoch+1}", position=0, leave=True)
+            progress_bar = tqdm(enumerate(self.train_dataloader), total=len(self.train_dataloader), desc=f"Epoch {epoch+1}", position=0, leave=True)
             for step, batch in progress_bar:
                 masked_input_ids = batch["masked_input_ids"].to(self.device)
                 mask_labels = batch["mask_labels"].to(self.device)
@@ -78,3 +97,10 @@ class Trainer:
                 self.scaler.update()
                 
                 progress_bar.set_postfix(Step=step+1, Loss=round(loss.item(), 4))
+                
+                # get the loss on validation set and save checkpoint
+                if (step+1) % self.log_step == 0 or step == len(self.train_dataloader) - 1:
+                    self.evaluate_val_loss(step)
+                    
+                            
+                                
