@@ -26,6 +26,7 @@ class Trainer:
         self.resume_path = self.config['resume_path']
         self.jd_path = self.config['jd_path']
         self.log_step = self.config['log_step']
+        self.use_fp16 = self.config['use_fp16']
         
         # create a checkpoint path
         os.makedirs(self.checkpoints_path, exist_ok=True)
@@ -71,10 +72,16 @@ class Trainer:
                 val_mask_labels = val_batch["mask_labels"].to(self.device)
                 val_attention_mask = val_batch["attention_mask"].to(self.device)
                 
-                with torch.amp.autocast(device_type='cuda'):
+                if self.use_fp16:
+                    with torch.amp.autocast(device_type='cuda'):
+                        val_outputs = self.model(val_masked_input_ids, attention_mask=val_attention_mask)
+                        val_logits = val_outputs.logits
+                        val_loss += self.mlm_loss(val_logits.view(-1, val_logits.size(-1)), val_mask_labels.view(-1)).item()
+                else:
                     val_outputs = self.model(val_masked_input_ids, attention_mask=val_attention_mask)
                     val_logits = val_outputs.logits
                     val_loss += self.mlm_loss(val_logits.view(-1, val_logits.size(-1)), val_mask_labels.view(-1)).item()
+                    
                 val_steps += 1
                 
         avg_val_loss = val_loss / val_steps
@@ -100,22 +107,36 @@ class Trainer:
     def train(self):
         self.model.train()
         for epoch in range(self.epoch_num):
-            progress_bar = tqdm(enumerate(self.train_dataloader), total=len(self.train_dataloader), desc=f"Epoch {epoch+1}", position=0, leave=True)
+            progress_bar = tqdm(enumerate(self.train_dataloader), 
+                                total=len(self.train_dataloader), 
+                                desc=f"Epoch {epoch+1}", position=0, leave=True)
+            
             for step, batch in progress_bar:
                 masked_input_ids = batch["masked_input_ids"].to(self.device)
                 mask_labels = batch["mask_labels"].to(self.device)
                 attention_mask = batch["attention_mask"].to(self.device)
                 
                 # add fp16 options
-                with torch.amp.autocast(device_type='cuda'):
+                if self.use_fp16:
+                    with torch.amp.autocast(device_type='cuda'):
+                        outputs = self.model(masked_input_ids, attention_mask=attention_mask)  
+                        logits = outputs.logits
+                        loss = self.mlm_loss(logits.view(-1, logits.size(-1)), mask_labels.view(-1))
+                else:
                     outputs = self.model(masked_input_ids, attention_mask=attention_mask)  
                     logits = outputs.logits
                     loss = self.mlm_loss(logits.view(-1, logits.size(-1)), mask_labels.view(-1))
+                    
                 
                 self.optimizer.zero_grad()
-                self.scaler.scale(loss).backward()
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
+                
+                if self.use_fp16:
+                    self.scaler.scale(loss).backward()
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    loss.backward()
+                    self.optimizer.step()
                 
                 self.train_losses.append(round(loss.item(), 4))
                 progress_bar.set_postfix(Step=step+1, Loss=round(loss.item(), 4))
