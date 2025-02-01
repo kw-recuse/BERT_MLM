@@ -6,6 +6,7 @@ from torch.cuda.amp import autocast, GradScaler
 from torch.nn import functional as F
 from models.base import load_tokenizer_and_model
 from data.dataloader import create_dataloaders
+from utils.plot_losses import live_plot
 
 class Trainer:
     def __init__(self, config_file, **kwargs):
@@ -43,6 +44,10 @@ class Trainer:
         # set scaler
         self.scaler = GradScaler()
         
+        # initalize list to hold train losses, and val losses
+        self.train_losses = []
+        self.val_losses = []
+        
     @staticmethod
     def _load_config(json_path):
         with open(json_path, 'r') as f:
@@ -56,7 +61,7 @@ class Trainer:
         loss = F.cross_entropy(pred_masked, labels_masked)
         return loss
     
-    def evaluate_val_loss(self, step):
+    def evaluate_val_loss(self, epoch, step):
         self.model.eval()
         val_loss = 0.0
         val_steps = 0
@@ -73,8 +78,24 @@ class Trainer:
                 val_steps += 1
                 
         avg_val_loss = val_loss / val_steps
-        print(f"Validation Loss at step {step+1}: {round(avg_val_loss, 4)}")
+        avg_val_loss = round(avg_val_loss.item(), 4)
+        self.val_losses.append(avg_val_loss)
+        print(f"Validation Loss at epoch: {epoch} - step {step+1}: {avg_val_loss}")
         self.model.train()
+        return avg_val_loss
+    
+    def save_checkpoint(self, epoch, step, val_loss):
+        checkpoint_path = os.path.join(self.checkpoints_path, f"epoch{epoch}_step{step}_loss{val_loss}.pt")
+        torch.save({
+            'epoch': epoch,
+            'step': step,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scaler_state_dict': self.scaler.state_dict()
+        }, checkpoint_path)
+        print(f"Checkpoint saved at {checkpoint_path}")
+        
+        
     
     def train(self):
         self.model.train()
@@ -96,11 +117,11 @@ class Trainer:
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
                 
+                self.train_losses.append(round(loss.item(), 4))
                 progress_bar.set_postfix(Step=step+1, Loss=round(loss.item(), 4))
                 
                 # get the loss on validation set and save checkpoint
                 if (step+1) % self.log_step == 0 or step == len(self.train_dataloader) - 1:
-                    self.evaluate_val_loss(step)
-                    
-                            
-                                
+                    val_loss = self.evaluate_val_loss(epoch+1, step) # get the val loss
+                    self.save_checkpoint(epoch+1, step, val_loss) # save the checkpoint
+                    live_plot(self.train_losses, self.val_losses, self.log_step) # show live plot
