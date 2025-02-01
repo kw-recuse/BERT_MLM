@@ -6,7 +6,6 @@ from torch.cuda.amp import autocast, GradScaler
 from torch.nn import functional as F
 from models.base import load_tokenizer_and_model
 from data.dataloader import create_dataloaders
-from utils.plot_losses import live_plot
 
 class Trainer:
     def __init__(self, config_file, **kwargs):
@@ -85,9 +84,9 @@ class Trainer:
                 val_steps += 1
                 
         avg_val_loss = val_loss / val_steps
-        avg_val_loss = round(avg_val_loss.item(), 4)
+        avg_val_loss = round(avg_val_loss, 4)
         self.val_losses.append(avg_val_loss)
-        print(f"Validation Loss at epoch: {epoch} - step {step+1}: {avg_val_loss}")
+        print(f"\nValidation Loss at epoch: {epoch} - step {step+1}: {avg_val_loss}")
         self.model.train()
         return avg_val_loss
     
@@ -103,7 +102,6 @@ class Trainer:
         print(f"Checkpoint saved at {checkpoint_path}")
         
         
-    
     def train(self):
         self.model.train()
         for epoch in range(self.epoch_num):
@@ -145,4 +143,3 @@ class Trainer:
                 if (step+1) % self.log_step == 0 or step == len(self.train_dataloader) - 1:
                     val_loss = self.evaluate_val_loss(epoch+1, step) # get the val loss
                     self.save_checkpoint(epoch+1, step, val_loss) # save the checkpoint
-                    live_plot(self.train_losses, self.val_losses, self.log_step) # show live plot

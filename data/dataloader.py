@@ -53,7 +53,7 @@ class MLMDataset(Dataset):
         }
 
 
-def create_dataloaders(resume_path, jd_path, tokenizer, batch_size, train_ratio=0.1):
+def create_dataloaders(resume_path, jd_path, tokenizer, batch_size, train_ratio=0.95):
     resume_dataset = MLMDataset(resume_path, tokenizer, 'Resume_str')
     jd_dataset = MLMDataset(jd_path, tokenizer, 'job_description')
     
