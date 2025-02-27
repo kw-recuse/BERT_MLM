@@ -86,7 +86,7 @@ class Trainer:
         avg_val_loss = val_loss / val_steps
         avg_val_loss = round(avg_val_loss, 4)
         self.val_losses.append(avg_val_loss)
-        print(f"\nValidation Loss at epoch: {epoch} - step {step+1}: {avg_val_loss}")
+        tqdm.write(f"Validation Loss at epoch: {epoch} - step {step}: {avg_val_loss}")
         self.model.train()
         return avg_val_loss
     
@@ -99,7 +99,7 @@ class Trainer:
             'optimizer_state_dict': self.optimizer.state_dict(),
             'scaler_state_dict': self.scaler.state_dict()
         }, checkpoint_path)
-        print(f"Checkpoint saved at {checkpoint_path}")
+        tqdm.write(f"Checkpoint saved at {checkpoint_path}")
         
         
     def train(self):
@@ -141,5 +141,5 @@ class Trainer:
                 
                 # get the loss on validation set and save checkpoint
                 if (step+1) % self.log_step == 0 or step == len(self.train_dataloader) - 1:
-                    val_loss = self.evaluate_val_loss(epoch+1, step) # get the val loss
-                    self.save_checkpoint(epoch+1, step, val_loss) # save the checkpoint
+                    val_loss = self.evaluate_val_loss(epoch+1, step+1) # get the val loss
+                    self.save_checkpoint(epoch+1, step+1, val_loss) # save the checkpoint
