@@ -12,7 +12,7 @@ class Trainer:
         self.config = self._load_config(config_file)
         
         # take the keyword args
-        for key in ['checkpoints_path', 'resume_path', 'jd_path']:
+        for key in ['checkpoints_path', 'csv_file_paths', 'col_names']:
             if key in kwargs:
                 self.config[key] = kwargs[key]
         
@@ -39,7 +39,7 @@ class Trainer:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
         
         # initalize data loaders
-        self.train_dataloader, self.val_dataloader = create_dataloaders(self.resume_path, self.jd_path, self.tokenizer, self.batch_size)
+        self.train_dataloader, self.val_dataloader = create_dataloaders(self.csv_file_paths, self.col_names,  self.tokenizer, self.batch_size)
         
         # set scaler
         self.scaler = GradScaler()

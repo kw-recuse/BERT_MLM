@@ -53,11 +53,15 @@ class MLMDataset(Dataset):
         }
 
 
-def create_dataloaders(resume_path, jd_path, tokenizer, batch_size, train_ratio=0.95):
-    resume_dataset = MLMDataset(resume_path, tokenizer, 'Resume_str')
-    jd_dataset = MLMDataset(jd_path, tokenizer, 'job_description')
+def create_dataloaders(csv_file_paths, col_names, tokenizer, batch_size, train_ratio=0.95):
+    if len(csv_file_paths) != len(col_names):
+        raise ValueError(f"Expected the number of CSV file paths to equal the number of column names, but got {len(csv_file_paths)} and {len(col_names)}")
     
-    combined_dataset = ConcatDataset([resume_dataset, jd_dataset])
+    datasets = []
+    for csv_file, col_name in zip(csv_file_paths, col_names):
+        datasets.append(MLMDataset(csv_file, tokenizer, col_name))
+        
+    combined_dataset = ConcatDataset(datasets)
     train_size = int(train_ratio * len(combined_dataset))
     val_size = len(combined_dataset) - train_size
     train_dataset, val_dataset = random_split(combined_dataset, [train_size, val_size])
