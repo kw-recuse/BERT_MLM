@@ -1,0 +1,9 @@
+{
+    "model_name": "sentence-transformers/distiluse-base-multilingual-cased-v2",
+    "device": "cuda",
+    "batch_size": 16,
+    "lr": 5e-5,
+    "epoch_num": 1,
+    "log_per_epoch": 5,
+    "use_fp16": false
+}
