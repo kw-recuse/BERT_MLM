@@ -22,8 +22,8 @@ class Trainer:
         self.checkpoints_path = self.config['checkpoints_path']
         self.lr = self.config['lr']
         self.epoch_num = self.config['epoch_num']
-        self.resume_path = self.config['resume_path']
-        self.jd_path = self.config['jd_path']
+        self.csv_file_paths = self.config['csv_file_paths']
+        self.col_names = self.config['col_names']
         self.log_per_epoch = self.config['log_per_epoch']
         self.use_fp16 = self.config['use_fp16']
         

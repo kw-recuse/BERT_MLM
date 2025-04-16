@@ -4,12 +4,12 @@ from torch.utils.data import random_split, Dataset, DataLoader, ConcatDataset
 import pandas as pd
 
 class MLMDataset(Dataset):
-    def __init__(self, csv_path, tokenizer, text_column, max_length=4096, mask_prob=0.15):
+    def __init__(self, csv_path, tokenizer, text_column, max_length=512, mask_prob=0.15):
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.mask_prob = mask_prob
-        self.data = pd.read_csv(csv_path)[text_column].dropna().tolist()  # Read text column from CSV
-
+        self.data = pd.read_csv(csv_path)[text_column].dropna().tolist()
+        
     def __len__(self):
         return len(self.data)
 
@@ -53,13 +53,13 @@ class MLMDataset(Dataset):
         }
 
 
-def create_dataloaders(csv_file_paths, col_names, tokenizer, batch_size, train_ratio=0.95):
+def create_dataloaders(csv_file_paths, col_names, max_length, tokenizer, batch_size, train_ratio=0.95):
     if len(csv_file_paths) != len(col_names):
         raise ValueError(f"Expected the number of CSV file paths to equal the number of column names, but got {len(csv_file_paths)} and {len(col_names)}")
     
     datasets = []
     for csv_file, col_name in zip(csv_file_paths, col_names):
-        datasets.append(MLMDataset(csv_file, tokenizer, col_name))
+        datasets.append(MLMDataset(csv_file, tokenizer, col_name, max_length))
         
     combined_dataset = ConcatDataset(datasets)
     train_size = int(train_ratio * len(combined_dataset))
