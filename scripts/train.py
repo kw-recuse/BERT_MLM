@@ -19,12 +19,12 @@ class Trainer:
         self.model_name = self.config['model_name']
         self.device = self.config['device']
         self.batch_size = self.config['batch_size']
-        self.checkpoints_path = self.config['checkpoints_path'] # path to save model checkpoint
+        self.checkpoints_path = self.config['checkpoints_path']
         self.lr = self.config['lr']
         self.epoch_num = self.config['epoch_num']
         self.resume_path = self.config['resume_path']
         self.jd_path = self.config['jd_path']
-        self.log_step = self.config['log_step']
+        self.log_per_epoch = self.config['log_per_epoch']
         self.use_fp16 = self.config['use_fp16']
         
         # create a checkpoint path
@@ -40,6 +40,8 @@ class Trainer:
         
         # initalize data loaders
         self.train_dataloader, self.val_dataloader = create_dataloaders(self.csv_file_paths, self.col_names,  self.tokenizer, self.batch_size)
+        
+        self.log_step = len(self.train_dataloader) // self.log_per_epoch
         
         # set scaler
         self.scaler = GradScaler()
