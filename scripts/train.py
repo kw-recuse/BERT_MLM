@@ -40,7 +40,8 @@ class Trainer:
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr)
         
         # initalize data loaders
-        self.train_dataloader, self.val_dataloader = create_dataloaders(self.csv_file_paths, self.col_names,  self.tokenizer, self.batch_size)
+        
+        self.train_dataloader, self.val_dataloader = create_dataloaders(self.csv_file_paths, self.col_names, self.max_length, self.tokenizer, self.batch_size)
         
         self.log_step = len(self.train_dataloader) // self.log_per_epoch
         
