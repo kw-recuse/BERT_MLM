@@ -26,6 +26,7 @@ class Trainer:
         self.col_names = self.config['col_names']
         self.log_per_epoch = self.config['log_per_epoch']
         self.use_fp16 = self.config['use_fp16']
+        self.max_length = self.config['max_length']
         
         # create a checkpoint path
         os.makedirs(self.checkpoints_path, exist_ok=True)
