@@ -60,7 +60,7 @@ class MLMDataset(Dataset):
         }
 
 
-def get_loaders(csv_paths, col_names, tokenizer, batch_size, max_length=512, mask_prob=0.15, train_ratio=0.95, seed=42,):
+def create_dataloaders(csv_paths, col_names, tokenizer, batch_size, max_length=512, mask_prob=0.15, train_ratio=0.95, seed=42,):
     dataset = MLMDataset(csv_paths, col_names, tokenizer, max_length=max_length, mask_prob=mask_prob)
     train_len = int(train_ratio * len(dataset))
     val_len   = len(dataset) - train_len

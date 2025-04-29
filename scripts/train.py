@@ -1,6 +1,6 @@
 import os 
 import json
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 import torch
 from torch.cuda.amp import autocast, GradScaler
 from torch.nn import functional as F
@@ -127,7 +127,6 @@ class Trainer:
                     outputs = self.model(masked_input_ids, attention_mask=attention_mask)  
                     logits = outputs.logits
                     loss = self.mlm_loss(logits.view(-1, logits.size(-1)), mask_labels.view(-1))
-                    
                 
                 self.optimizer.zero_grad()
                 

@@ -4,6 +4,7 @@
     "batch_size": 4,
     "lr": 5e-5,
     "epoch_num": 1,
-    "log_step": 50,
-    "use_fp16": true
+    "log_per_epoch": 50,
+    "use_fp16": true,
+    "max_length": 512
 }
