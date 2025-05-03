@@ -66,7 +66,7 @@ def create_dataloaders(csv_file_paths, col_names, max_length, tokenizer, batch_s
     val_size = len(combined_dataset) - train_size
     train_dataset, val_dataset = random_split(combined_dataset, [train_size, val_size])
 
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
     
     return train_dataloader, val_dataloader
